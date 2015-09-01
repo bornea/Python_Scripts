@@ -1,0 +1,60 @@
+Setup for MaxQuant Wrapper on Windows Machine
+1) Ensure that the path variable in enviroment variables has MaxQuantCMD.exe path. 
+	-If Maxquant is not set up it can be found at http://www.maxquant.org
+2) If python is not  installed on the machine install python 2.7.- from https://www.python.org/downloads/
+3)	Download the zip file containing the pulsar at https://github.com/galaxyproject/pulsar
+	-I suggest extracting it onto the C:\ drive but if not make sure that all other paths reflect this change.
+4)	Install setup tools by downloading the ez_setup.py at https://pypi.python.org/pypi/setuptools and running it using the “python ez_setup.py” command in Powershell 
+5)	Install the dependencies using “easy_install paste wsgiutils PasteScript PasteDeploy webob six psutil” command in powershell
+6)	Rename the server.ini.sample file inside the pulsar-master directory to server.ini
+7)	Change the host line to the IP of the Windows Machine running pulsar (line 13)
+8)	Run the “paster serve server.ini” in cmd prompt
+	-This is a test step that will tell you that it is functional and serving at the IP and port expected. 
+9) Download NSSM at http://nssm.cc/download extract it and run in an administrator cmd prompt "C:\nssm-2.24\nssm-2.24\win64 install pulsar"
+	-Make sure your path in the last command refelects where NSSM was extracted as well as having the proper version.
+10) In the GUI point the path to the run batch file in the pulsar-master folder. 
+11) Open the mangement console (right click on pc name in start menu click Manage) and run the service pulsar. 
+12) Create the folder C:\mq_jobs
+13) Install Beautiful Soup for python with "easy_install beautifulsoup4" and lxml using the correct executable at https://pypi.python.org/pypi/lxml/3.3.5#downloads. 
+
+Galaxy Configuration
+1) In the config/galaxy.ini uncomment line 770 and make sure that "job_config_file = config/job_conf.xml" is line 770
+2) In the config/job_conf.xml.sample_basic file add
+<plugin id=”pulsar” type=”runner” load=”galaxy.jobs.runners.pulsar:PulsarLegacyJobRunner” />
+Inside the <plugins> tag. Change the destinations tag to 
+<destinations default=”local”> 
+Within that tag add
+<destination id =”win_pulsar” runner=”pulsar”
+    <param id=”url”>http:// IP of windows host here: Pulsar port here/</param>
+</destination>
+(Ex. <param id=”url”>http://10.201.30.135:8913/</param>)
+After the </destinations> tag add 
+<tools>
+     <tool id=”name of tool to send to pulsar” destination=”win_pulsar”/>
+</tools>
+	-With MaxQuant name of tool is maxquant_wrapper. 
+3) Save the file as job_conf.xml in the config folder. 
+4) In the running tool_conf.xml file add the line <tool file="path to wrapper in tools/maxquant_warpper_0.1.xml"/> in the section desired. 
+5) Place the warper and xml file in the path specified in the last step
+6) Run Galaxy
+
+Full job_conf.xml code.
+<?xml version="1.0" ?>  
+<job_conf>
+	<plugins>
+		<plugin id="local" type="runner" load="galaxy.jobs.runners.local:LocalJobRunner" workers="4" />
+		<plugin id="pulsar" type="runner" load="galaxy.jobs.runners.pulsar:PulsarLegacyJobRunner" /> 
+	</plugins>
+	<handlers>
+		<handler id="main" /> 
+	</handlers>
+	<destinations default="local">
+		<destination id="win_pulsar" runner="pulsar">
+			<param id="url">http://10.201.30.135:8913/</param>
+		</destination>
+		<destination id="local" runner="local" /> 
+ 	</destinations>
+	<tools>
+		<tool id="maxquant_wrapper" destination="win_pulsar" /> 
+	</tools>
+</job_conf>
